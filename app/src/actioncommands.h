@@ -45,6 +45,8 @@ public:
     // edit
     void flipSelectionX();
     void flipSelectionY();
+    void selectAll();
+    void deselectAll();
 
     // view
     void ZoomIn();
@@ -73,7 +75,10 @@ public:
     Status addNewCameraLayer();
     Status addNewSoundLayer();
     Status deleteCurrentLayer();
-    QString nameSuggest(QString s);
+    void changeKeyframeLineColor();
+    void changeallKeyframeLineColor();
+
+    void setLayerVisibilityIndex(int index);
 
     // Help
     void help();

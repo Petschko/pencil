@@ -541,6 +541,13 @@ void BitmapImage::setPixel(QPoint p, QRgb colour)
     modification();
 }
 
+void BitmapImage::fillNonAlphaPixels(const QRgb color)
+{
+    if (mBounds.isEmpty()) { return; }
+
+    BitmapImage fill(bounds(), color);
+    paste(&fill, QPainter::CompositionMode_SourceIn);
+}
 
 void BitmapImage::drawLine(QPointF P1, QPointF P2, QPen pen, QPainter::CompositionMode cm, bool antialiasing)
 {
@@ -652,6 +659,54 @@ void BitmapImage::drawPath(QPainterPath path, QPen pen, QBrush brush,
     modification();
 }
 
+Status::StatusInt BitmapImage::findLeft(QRectF rect, int grayValue)
+{
+    Status::StatusInt retValues;
+    retValues.value = -1;
+    retValues.errorcode = Status::FAIL;
+    int left = static_cast<int>(rect.left());
+    int right = static_cast<int>(rect.right());
+    int top = static_cast<int>(rect.top());
+    int bottom = static_cast<int>(rect.bottom());
+    for (int x = left; x <= right; x++)
+    {
+        for (int y = top; y <= bottom; y++)
+        {
+            if (qAlpha(constScanLine(x,y)) == 255 && qGray(constScanLine(x,y)) < grayValue)
+            {
+                retValues.value = x;
+                retValues.errorcode = Status::OK;
+                return retValues;
+            }
+        }
+    }
+    return retValues;
+}
+
+Status::StatusInt BitmapImage::findTop(QRectF rect, int grayValue)
+{
+    Status::StatusInt retValues;
+    retValues.value = -1;
+    retValues.errorcode = Status::FAIL;
+    int left = static_cast<int>(rect.left());
+    int right = static_cast<int>(rect.right());
+    int top = static_cast<int>(rect.top());
+    int bottom = static_cast<int>(rect.bottom());
+    for (int y = top; y <= bottom; y++)
+    {
+        for (int x = left; x <= right; x++)
+        {
+            if (qAlpha(constScanLine(x,y)) == 255 && qGray(constScanLine(x,y)) < grayValue)
+            {
+                retValues.value = y;
+                retValues.errorcode = Status::OK;
+                return retValues;
+            }
+        }
+    }
+    return retValues;
+}
+
 Status BitmapImage::writeFile(const QString& filename)
 {
     if (mImage && !mImage->isNull())
@@ -681,7 +736,7 @@ void BitmapImage::clear()
     modification();
 }
 
-QRgb BitmapImage::constScanLine(int x, int y)
+QRgb BitmapImage::constScanLine(int x, int y) const
 {
     QRgb result = qRgba(0, 0, 0, 0);
     if (mBounds.contains(QPoint(x, y)))
@@ -797,7 +852,7 @@ void BitmapImage::floodFill(BitmapImage* targetImage,
 
     // Extend to size of Camera
     targetImage->extend(cameraRect);
-    replaceImage = new BitmapImage(cameraRect, Qt::transparent);
+    replaceImage = new BitmapImage(targetImage->mBounds, Qt::transparent);
 
     queue.append(point);
     // Preparations END
